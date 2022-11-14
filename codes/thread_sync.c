@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
 
 void *functionC(void *ptr){
    char *whoami = (char*)ptr;
-   while(counter < 100){
+   while(counter < 99){
       pthread_mutex_lock( &mutex1 );
       counter++;
       printf("%s Counter value: %d\n", whoami, counter);

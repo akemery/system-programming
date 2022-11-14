@@ -13,8 +13,8 @@ int main(int argc, char *argv[]){
        ret = write(1, "Bonjour  ", 10 );
        if(ret < 0){
           if(errno == EAGAIN){
-             printf("Buffer is full: %d\n", nchars);
-             break;
+             fprintf(stderr, "ret(%d) buffer sizes (%d)\n", ret, nchars);
+             nchars = 0;
           }
        }
        nchars+=ret;
