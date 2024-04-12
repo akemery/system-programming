@@ -33,15 +33,21 @@ int main(int argc, char *argv[]){
    }
    
    sd = init(port);
+   if(sd < 0){
+      fprintf(stderr, "Error during server initialization\n");
+      return 3;
+   }
    fcntl(1, F_SETFL, O_NONBLOCK );
-   //fcntl(sd, F_SETFL, O_NONBLOCK );
+   fcntl(sd, F_SETFL, O_NONBLOCK );
    FD_ZERO(&readset);
    FD_ZERO(&writeset);
-   
+   do{
    if((csd = accept(sd, &client_addr, &clen)) < 0){
       fprintf(stderr, "Un petit problème lors du accept %d\n", errno);
       return -1;
    }
+   }while(csd < 0 && errno == EAGAIN);
+   
    fprintf(stdout, "tentative de connexion\n");
    write(csd, "Bonjour tous le monde", 21);
    for(;;){}
@@ -115,7 +121,7 @@ int init(int port){
               fprintf(stderr, "The address is protected, "
                         "and the user is not the superuser.");
               break;
-          case EADDRINUSE;
+          case EADDRINUSE:
               fprintf(stderr, "The given address is already in use.");
               break;
           case EBADF:
@@ -137,7 +143,18 @@ int init(int port){
 
     if(listen(sd, 10) == -1)
     {
-        printf("Failed to listen\n");
+        switch(errno){
+           case EADDRINUSE:
+               fprintf(stderr, "Another socket is already listening on the same port.\n");
+               break;
+           case EBADF:
+               fprintf(stderr, " The argument sockfd is not a valid file descriptor.\n");
+               break;
+           default:
+               fprintf(stderr, "Error during listen system call\n");
+               break;
+        }
+        
         return -1;
     }
     
