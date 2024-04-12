@@ -73,9 +73,14 @@ int main(int argc, char *argv[]){
           }
           char buff[BUFFER_SIZE];
           do{
-              ret = read(fd, buff, BUFFER_SIZE);
-          }while(ret < 0 && errno == EAGAIN);          
-          write(csd, buff, ret);
+             do{
+                ret = read(fd, buff, BUFFER_SIZE);
+             }while(ret < 0 && errno == EAGAIN); 
+             if(ret > 0){         
+                write(csd, buff, ret);
+             }
+          }while(ret > 0 && ret != EOF);
+          
           close(csd);
           return 0;
       }else {

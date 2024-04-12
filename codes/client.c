@@ -8,6 +8,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#define BUFFER_SIZE 8192
+
 int init();
 
 struct message{
@@ -25,15 +27,16 @@ int main(int argc, char *argv[]){
    fcntl(sd, F_SETFL, O_NONBLOCK );
    FD_ZERO(&readset);
    FD_ZERO(&writeset);
+   char buffer[BUFFER_SIZE];
    while (1){
        FD_SET(sd, &writeset);
        FD_SET(sd, &readset);
        ret = select(sd+1, &readset, &writeset, NULL, NULL);
        if (FD_ISSET(sd, &readset)){
-          fprintf(stdout, "tentative de connexion\n");
+          ret = read(sd, buffer, BUFFER_SIZE);
+          printf("%s", buffer); 
           FD_CLR(sd, &readset);
        }
-       fprintf(stdout, "tentative de connexion\n");
     }
     fprintf(stderr , "La taille du buffer du clavier est %d", size_inbytes);
 }
@@ -50,18 +53,13 @@ int init(){
    /* Initialisation du strucutre du socket */
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_port = htons(4445); // port
-   serv_addr.sin_addr.s_addr = inet_addr("196.192.16.70");
+   serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     
    if(connect(sd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0){
         printf("\n Error: Connect Failed (%d) \n", errno);
         return -1;
    }
-   char buffer[22];
-   read(sd, buffer, 21);
-   buffer[21] = '\0';
-   printf("%s\n", buffer);
-   for(;;){}
-   printf("end %d\n", sd);
+   
    return sd;
 }
