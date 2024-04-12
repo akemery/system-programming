@@ -22,6 +22,7 @@ int main(int argc, char *argv[]){
    fd_set readset, writeset;
    struct sockaddr client_addr;
    int clen;
+   pid_t chld;
    if(argc < 2){
        fprintf(stderr, "%s <port>\n", argv[0]);
        return 1;
@@ -41,16 +42,34 @@ int main(int argc, char *argv[]){
    fcntl(sd, F_SETFL, O_NONBLOCK );
    FD_ZERO(&readset);
    FD_ZERO(&writeset);
-   do{
-   if((csd = accept(sd, &client_addr, &clen)) < 0){
-      fprintf(stderr, "Un petit problème lors du accept %d\n", errno);
-      return -1;
-   }
-   }while(csd < 0 && errno == EAGAIN);
+   while(1){
+     FD_SET(sd, &readset);
+     ret = select(sd+1, &readset, &writeset, NULL, NULL);
+     if(ret < 0){
+          printf("erreur de select\n");
+          exit(1);
+      }
+       
    
-   fprintf(stdout, "tentative de connexion\n");
-   write(csd, "Bonjour tous le monde", 21);
-   for(;;){}
+      if((csd = accept(sd, &client_addr, &clen)) < 0){
+        fprintf(stderr, "Un petit problème lors du accept %d\n", errno);
+        return -1;
+      }
+      fprintf(stdout, "tentative de connexion\n");
+      chld = fork();
+      if(chld < 0){
+        fprintf(stderr, "Unable to create child process\n");
+        return 4;
+      }
+      if(chld == 0){
+          write(csd, "Bonjour tous le monde", 21);
+          close(csd);
+          return 0;
+      }else {
+   
+      }
+   }
+   /*for(;;){}
    while (1){
        //FD_SET(sd, &writeset);
        FD_SET(sd, &readset);
@@ -66,7 +85,9 @@ int main(int argc, char *argv[]){
        }
        fprintf(stdout, "tentative de connexion\n");
     }
-    fprintf(stderr , "La taille du buffer du clavier est %d", size_inbytes);
+    fprintf(stderr , "La taille du buffer du clavier est %d", size_inbytes);*/
+    close(sd);
+    return 0;
 }
 
 int init(int port){
