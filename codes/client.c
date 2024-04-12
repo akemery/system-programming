@@ -20,21 +20,31 @@ struct message{
 
 int main(int argc, char *argv[]){
 
-   int ret, size_inbytes = 0, sd;
+   int ret, wret, size_inbytes = 0, sd;
    fd_set readset, writeset;
+   
+   if(argc < 2){
+       fprintf(stderr, "%s <dest_file_name>\n", argv[0]);
+       return 1;
+   }
    sd = init();
    fcntl(1, F_SETFL, O_NONBLOCK );
    fcntl(sd, F_SETFL, O_NONBLOCK );
    FD_ZERO(&readset);
    FD_ZERO(&writeset);
    char buffer[BUFFER_SIZE];
+   int fd = open(argv[1], O_WRONLY | O_CREAT , S_IRWXU);
+   if(fd < 0){
+       fprintf(stderr, "Unable to create the destination file\n");
+       return 0;
+   }
    while (1){
        FD_SET(sd, &writeset);
        FD_SET(sd, &readset);
        ret = select(sd+1, &readset, &writeset, NULL, NULL);
        if (FD_ISSET(sd, &readset)){
           ret = read(sd, buffer, BUFFER_SIZE);
-          printf("%s", buffer); 
+          wret = write(fd, buffer, ret); 
           FD_CLR(sd, &readset);
        }
     }
