@@ -21,18 +21,18 @@ int main(int argc, char *argv[]){
    int ret, size_inbytes = 0, sd;
    fd_set readset, writeset;
    sd = init();
-   /*fcntl(1, F_SETFL, O_NONBLOCK );
+   fcntl(1, F_SETFL, O_NONBLOCK );
    fcntl(sd, F_SETFL, O_NONBLOCK );
    FD_ZERO(&readset);
-   FD_ZERO(&writeset);*/
+   FD_ZERO(&writeset);
    while (1){
-       /*FD_SET(sd, &writeset);
+       FD_SET(sd, &writeset);
        FD_SET(sd, &readset);
        ret = select(sd+1, &readset, &writeset, NULL, NULL);
        if (FD_ISSET(sd, &readset)){
           fprintf(stdout, "tentative de connexion\n");
           FD_CLR(sd, &readset);
-       }*/
+       }
        fprintf(stdout, "tentative de connexion\n");
     }
     fprintf(stderr , "La taille du buffer du clavier est %d", size_inbytes);
