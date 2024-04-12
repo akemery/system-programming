@@ -8,7 +8,10 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-int init();
+#define BUFFER_SIZE 8192
+
+int init(int port);
+
 
 struct message{
   long source;
@@ -23,8 +26,8 @@ int main(int argc, char *argv[]){
    struct sockaddr client_addr;
    int clen;
    pid_t chld;
-   if(argc < 2){
-       fprintf(stderr, "%s <port>\n", argv[0]);
+   if(argc < 3){
+       fprintf(stderr, "%s <port> <file> \n", argv[0]);
        return 1;
    }
    int port = atoi(argv[1]);
@@ -62,7 +65,17 @@ int main(int argc, char *argv[]){
         return 4;
       }
       if(chld == 0){
-          write(csd, "Bonjour tous le monde", 21);
+          
+          int fd = open(argv[2], O_RDONLY);
+          if(fd < 0){
+             fprintf(stderr, "Unable to open the file\n");
+             return -1;
+          }
+          char buff[BUFFER_SIZE];
+          do{
+              ret = read(fd, buff, BUFFER_SIZE);
+          }while(ret < 0 && errno == EAGAIN);          
+          write(csd, buff, ret);
           close(csd);
           return 0;
       }else {
