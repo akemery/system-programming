@@ -7,46 +7,71 @@
 #include <sys/types.h>     
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #define BUFFER_SIZE 8192
 
 int init();
 
 struct message{
-  long source;
-  long dest;
-  long opcode;
+  int size;
+  char cmd[256];
 };
 
 int main(int argc, char *argv[]){
 
    int ret, wret, size_inbytes = 0, sd;
    fd_set readset, writeset;
-   
+   struct message cl_cmd;
    if(argc < 2){
        fprintf(stderr, "%s <dest_file_name>\n", argv[0]);
        return 1;
    }
    sd = init();
+   //sd = 5;
    fcntl(1, F_SETFL, O_NONBLOCK );
+   fcntl(0, F_SETFL, O_NONBLOCK );
    fcntl(sd, F_SETFL, O_NONBLOCK );
    FD_ZERO(&readset);
    FD_ZERO(&writeset);
    char buffer[BUFFER_SIZE];
-   int fd = open(argv[1], O_WRONLY | O_CREAT , S_IRWXU);
+   /*int fd = open(argv[1], O_WRONLY | O_CREAT , S_IRWXU);
    if(fd < 0){
        fprintf(stderr, "Unable to create the destination file\n");
        return 0;
-   }
+   }*/
    while (1){
        FD_SET(sd, &writeset);
        FD_SET(sd, &readset);
+       FD_SET(0, &readset);
        ret = select(sd+1, &readset, &writeset, NULL, NULL);
-       if (FD_ISSET(sd, &readset)){
+       printf("am here\n");
+       if(FD_ISSET(0, &readset)){
+          fprintf(stdout, ">");
+          do{
+             ret = scanf("%s", cl_cmd.cmd);
+          } while(ret==EOF && errno == EAGAIN);
+          fprintf(stdout, "%s\n", cl_cmd.cmd);
+          cl_cmd.size = strlen(cl_cmd.cmd);
+          write(sd, &cl_cmd.size, 4);
+          write(sd, cl_cmd.cmd, cl_cmd.size);
+          fprintf(stdout, ">");
+          FD_CLR(0, &readset);
+        
+       }
+       printf("am IIII here\n");
+        
+       /*if (FD_ISSET(sd, &readset)){
           ret = read(sd, buffer, BUFFER_SIZE);
           wret = write(fd, buffer, ret); 
+          if(wret < ret){
+              fprintf(stderr, "aha une différence de taille\n");
+          }
           FD_CLR(sd, &readset);
-       }
+       }*/
+       FD_CLR(0, &readset);
+       FD_CLR(sd, &readset);
+      
     }
     fprintf(stderr , "La taille du buffer du clavier est %d", size_inbytes);
 }
@@ -62,7 +87,7 @@ int init(){
 
    /* Initialisation du strucutre du socket */
    serv_addr.sin_family = AF_INET;
-   serv_addr.sin_port = htons(4445); // port
+   serv_addr.sin_port = htons(9445); // port
    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     

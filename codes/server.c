@@ -14,9 +14,8 @@ int init(int port);
 
 
 struct message{
-  long source;
-  long dest;
-  long opcode;
+  int size;
+  char cmd[256];
 };
 
 int main(int argc, char *argv[]){
@@ -26,6 +25,7 @@ int main(int argc, char *argv[]){
    struct sockaddr client_addr;
    int clen;
    pid_t chld;
+   struct message sv_cmd;
    if(argc < 3){
        fprintf(stderr, "%s <port> <file> \n", argv[0]);
        return 1;
@@ -47,16 +47,19 @@ int main(int argc, char *argv[]){
    FD_ZERO(&writeset);
    while(1){
      FD_SET(sd, &readset);
+     FD_SET(sd, &writeset);
      ret = select(sd+1, &readset, &writeset, NULL, NULL);
      if(ret < 0){
           printf("erreur de select\n");
           exit(1);
       }
        
-   
-      if((csd = accept(sd, &client_addr, &clen)) < 0){
-        fprintf(stderr, "Un petit problème lors du accept %d\n", errno);
-        return -1;
+      if(FD_ISSET(sd, &readset)){
+        if((csd = accept(sd, &client_addr, &clen)) < 0){
+          fprintf(stderr, "Un petit problème lors du accept %d\n", errno);
+          return -1;
+        }
+        FD_CLR(sd, &readset);
       }
       fprintf(stdout, "tentative de connexion\n");
       chld = fork();
@@ -65,8 +68,23 @@ int main(int argc, char *argv[]){
         return 4;
       }
       if(chld == 0){
-          
-          int fd = open(argv[2], O_RDONLY);
+          fcntl(csd, F_SETFL, O_NONBLOCK );
+          FD_SET(csd, &readset);
+          FD_SET(csd, &writeset);
+          printf("before select\n");
+          ret = select(csd+1, &readset, &writeset, NULL, NULL);
+          if(ret < 0){
+             printf("erreur de select\n");
+             exit(1);
+          }
+          printf("after select\n");
+          if(FD_ISSET(csd, &readset)){
+             read(csd, &sv_cmd.size, 4);
+             read(csd, sv_cmd.cmd, sv_cmd.size );
+             fprintf(stdout, "%s %d", sv_cmd.cmd, sv_cmd.size);
+             FD_CLR(csd, &readset);
+          }
+          /*int fd = open(argv[2], O_RDONLY);
           if(fd < 0){
              fprintf(stderr, "Unable to open the file\n");
              return -1;
@@ -79,7 +97,7 @@ int main(int argc, char *argv[]){
              if(ret > 0){         
                 write(csd, buff, ret);
              }
-          }while(ret > 0 && ret != EOF);
+          }while(ret > 0 && ret != EOF);*/
           
           close(csd);
           return 0;
