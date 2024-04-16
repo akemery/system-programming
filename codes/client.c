@@ -43,20 +43,21 @@ int main(int argc, char *argv[]){
    while (1){
        FD_SET(sd, &writeset);
        FD_SET(sd, &readset);
-       FD_SET(0, &readset);
+       //FD_SET(0, &readset);
        ret = select(sd+1, &readset, &writeset, NULL, NULL);
        printf("am here\n");
-       if(FD_ISSET(0, &readset)){
+       if(FD_ISSET(sd, &writeset)){
           fprintf(stdout, ">");
           do{
-             ret = scanf("%s", cl_cmd.cmd);
+             ret = scanf("%[^\n]", cl_cmd.cmd);
+             //fgets(cl_cmd.cmd, 256, stdin);
           } while(ret==EOF && errno == EAGAIN);
           fprintf(stdout, "%s\n", cl_cmd.cmd);
           cl_cmd.size = strlen(cl_cmd.cmd);
           write(sd, &cl_cmd.size, 4);
           write(sd, cl_cmd.cmd, cl_cmd.size);
           fprintf(stdout, ">");
-          FD_CLR(0, &readset);
+          FD_CLR(sd, &writeset);
         
        }
        printf("am IIII here\n");

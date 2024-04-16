@@ -69,8 +69,9 @@ int main(int argc, char *argv[]){
       }
       if(chld == 0){
           fcntl(csd, F_SETFL, O_NONBLOCK );
+          while(1){
           FD_SET(csd, &readset);
-          FD_SET(csd, &writeset);
+          //FD_SET(csd, &writeset);
           printf("before select\n");
           ret = select(csd+1, &readset, &writeset, NULL, NULL);
           if(ret < 0){
@@ -98,7 +99,7 @@ int main(int argc, char *argv[]){
                 write(csd, buff, ret);
              }
           }while(ret > 0 && ret != EOF);*/
-          
+          }
           close(csd);
           return 0;
       }else {
